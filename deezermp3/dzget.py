@@ -23,7 +23,7 @@ class DeezerMP3(object):
 
     def youtube_search(self, q, max_results):
         youtube = build('youtube', 'v3', developerKey=self.key)
-
+        
         search_response = youtube.search().list(
             q=q,
             part='id,snippet',
@@ -40,16 +40,21 @@ class DeezerMP3(object):
         self.log('## Fetching video urls...')
         for item in data['tracks']['data']:
             name = '%s - %s' % (item['artist']['name'], item['title'])
+        for item in data['tracks']['data']:
+            name = '%s - %s' % (item['artist']['name'], item['title'])
             self.log("## Searching for %s" % name)
             if self.key:
                 video = self.youtube_search(name, 10)
             else:
                 res = requests.get('https://www.youtube.com/results?search_query=%s' % name)
-                video = self.regexp_video.finditer(res.content.decode('utf-8')).next().group(1)
+                regexp = self.regexp_video.search(res.content.decode('utf-8'))
+                if not regexp:
+                    continue
+                video = regexp.group(0)
             if not video:
                 self.log(' > Not found')
                 continue
-            url = "http://www.youtube.com/watch?v=%s" % video
+            url = f"http://www.youtube.com{video}"
             self.log(' > Url: %s' % url)
             yield url
 
